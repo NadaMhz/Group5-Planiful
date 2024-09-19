@@ -1,11 +1,17 @@
+import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'auth/firebase_auth/firebase_user_provider.dart';
+import 'auth/firebase_auth/auth_util.dart';
+
 import 'backend/firebase/firebase_config.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import 'flutter_flow/flutter_flow_util.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'flutter_flow/nav/nav.dart';
 import 'index.dart';
@@ -18,7 +24,13 @@ void main() async {
 
   await FlutterFlowTheme.initialize();
 
-  runApp(MyApp());
+  final appState = FFAppState(); // Initialize FFAppState
+  await appState.initializePersistedState();
+
+  runApp(ChangeNotifierProvider(
+    create: (context) => appState,
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatefulWidget {
@@ -36,12 +48,32 @@ class _MyAppState extends State<MyApp> {
   late AppStateNotifier _appStateNotifier;
   late GoRouter _router;
 
+  late Stream<BaseAuthUser> userStream;
+
+  final authUserSub = authenticatedUserStream.listen((_) {});
+
   @override
   void initState() {
     super.initState();
 
     _appStateNotifier = AppStateNotifier.instance;
     _router = createRouter(_appStateNotifier);
+    userStream = plantifulFirebaseUserStream()
+      ..listen((user) {
+        _appStateNotifier.update(user);
+      });
+    jwtTokenStream.listen((_) {});
+    Future.delayed(
+      Duration(milliseconds: 1000),
+      () => _appStateNotifier.stopShowingSplashImage(),
+    );
+  }
+
+  @override
+  void dispose() {
+    authUserSub.cancel();
+
+    super.dispose();
   }
 
   void setThemeMode(ThemeMode mode) => safeSetState(() {
@@ -52,7 +84,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Plantiful',
+      title: 'plantiful',
       localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -85,7 +117,7 @@ class NavBarPage extends StatefulWidget {
 
 /// This is the private State class that goes with NavBarPage.
 class _NavBarPageState extends State<NavBarPage> {
-  String _currentPageName = 'HomePage';
+  String _currentPageName = 'homePage';
   late Widget? _currentPage;
 
   @override
@@ -98,11 +130,11 @@ class _NavBarPageState extends State<NavBarPage> {
   @override
   Widget build(BuildContext context) {
     final tabs = {
-      'HomePage': HomePageWidget(),
-      'Maket': MaketWidget(),
+      'homePage': HomePageWidget(),
+      'MyPlant': MyPlantWidget(),
+      'Care': CareWidget(),
       'profile': ProfileWidget(),
-      'care': CareWidget(),
-      'myPlant': MyPlantWidget(),
+      'market': MarketWidget(),
     };
     final currentIndex = tabs.keys.toList().indexOf(_currentPageName);
 
@@ -130,24 +162,16 @@ class _NavBarPageState extends State<NavBarPage> {
             tooltip: '',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.shopping_cart_sharp,
+            icon: FaIcon(
+              FontAwesomeIcons.leaf,
               size: 24.0,
             ),
-            label: 'Market',
+            label: 'My plants',
             tooltip: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.person,
-              size: 24.0,
-            ),
-            label: 'Profile',
-            tooltip: '',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.grid_view,
+              Icons.grid_view_sharp,
               size: 24.0,
             ),
             label: 'Care',
@@ -155,10 +179,18 @@ class _NavBarPageState extends State<NavBarPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.ac_unit,
+              Icons.person,
               size: 24.0,
             ),
-            label: 'My plants',
+            label: 'profile',
+            tooltip: '',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.shopping_cart,
+              size: 24.0,
+            ),
+            label: 'Market',
             tooltip: '',
           )
         ],

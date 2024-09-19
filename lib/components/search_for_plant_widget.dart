@@ -1,3 +1,4 @@
+import '/backend/api_requests/api_calls.dart';
 import '/flutter_flow/flutter_flow_icon_button.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
@@ -5,21 +6,19 @@ import '/flutter_flow/flutter_flow_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'bottom_sheet_for_search_model.dart';
-export 'bottom_sheet_for_search_model.dart';
+import 'search_for_plant_model.dart';
+export 'search_for_plant_model.dart';
 
-class BottomSheetForSearchWidget extends StatefulWidget {
-  /// search plant by name and photo
-  const BottomSheetForSearchWidget({super.key});
+class SearchForPlantWidget extends StatefulWidget {
+  const SearchForPlantWidget({super.key});
 
   @override
-  State<BottomSheetForSearchWidget> createState() =>
-      _BottomSheetForSearchWidgetState();
+  State<SearchForPlantWidget> createState() => _SearchForPlantWidgetState();
 }
 
-class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
+class _SearchForPlantWidgetState extends State<SearchForPlantWidget>
     with TickerProviderStateMixin {
-  late BottomSheetForSearchModel _model;
+  late SearchForPlantModel _model;
 
   @override
   void setState(VoidCallback callback) {
@@ -30,7 +29,7 @@ class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
   @override
   void initState() {
     super.initState();
-    _model = createModel(context, () => BottomSheetForSearchModel());
+    _model = createModel(context, () => SearchForPlantModel());
 
     _model.tabBarController = TabController(
       vsync: this,
@@ -50,6 +49,8 @@ class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
 
   @override
   Widget build(BuildContext context) {
+    context.watch<FFAppState>();
+
     return Container(
       width: double.infinity,
       height: 350.0,
@@ -73,6 +74,7 @@ class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
           Padding(
             padding: EdgeInsets.all(6.0),
             child: FlutterFlowIconButton(
+              borderColor: Colors.transparent,
               borderRadius: 8.0,
               buttonSize: 40.0,
               icon: Icon(
@@ -141,7 +143,7 @@ class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
                                   ),
                             ),
                             Container(
-                              width: 200.0,
+                              width: double.infinity,
                               child: TextFormField(
                                 controller: _model.textController,
                                 focusNode: _model.textFieldFocusNode,
@@ -155,7 +157,7 @@ class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
                                         fontFamily: 'Inter',
                                         letterSpacing: 0.0,
                                       ),
-                                  hintText: 'Type here....',
+                                  hintText: FFAppState().plantName,
                                   hintStyle: FlutterFlowTheme.of(context)
                                       .labelMedium
                                       .override(
@@ -208,8 +210,17 @@ class _BottomSheetForSearchWidgetState extends State<BottomSheetForSearchWidget>
                               ),
                             ),
                             FFButtonWidget(
-                              onPressed: () {
-                                print('Button pressed ...');
+                              onPressed: () async {
+                                _model.apiResult61p =
+                                    await SearchForPlantCall.call(
+                                  plantName: _model.textController.text,
+                                );
+
+                                if ((_model.apiResult61p?.succeeded ?? true)) {
+                                  context.pushNamed('plantInfo');
+                                }
+
+                                safeSetState(() {});
                               },
                               text: 'Search for plant',
                               options: FFButtonOptions(
